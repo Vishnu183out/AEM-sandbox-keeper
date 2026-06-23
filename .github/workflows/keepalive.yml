@@ -1,0 +1,31 @@
+name: AEM Sandbox Keeper
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+
+  workflow_dispatch:
+
+jobs:
+  ping-aem:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping AEM Sandbox
+        run: |
+          echo "Starting ping..."
+
+          STATUS=$(curl \
+            --silent \
+            --output /dev/null \
+            --write-out "%{http_code}" \
+            "${{ secrets.AEM_URL }}")
+
+          echo "HTTP Status: $STATUS"
+
+          if [ "$STATUS" -eq 200 ]; then
+            echo "Sandbox is reachable"
+          else
+            echo "Sandbox returned $STATUS"
+            exit 1
+          fi
