@@ -1,31 +1,45 @@
-name: AEM Sandbox Keeper
+name: AEM Environment Keeper
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
-
+    - cron: "0 */5 * * *"
   workflow_dispatch:
 
 jobs:
-  ping-aem:
+  ping:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        env:
+          - DEV
+          - STAGE
+          - PROD
+
     steps:
-      - name: Ping AEM Sandbox
+      - name: Select URL
         run: |
-          echo "Starting ping..."
+          if [ "${{ matrix.env }}" = "DEV" ]; then
+            echo "AEM_URL=${{ secrets.AEM_DEV_URL }}" >> $GITHUB_ENV
+          elif [ "${{ matrix.env }}" = "STAGE" ]; then
+            echo "AEM_URL=${{ secrets.AEM_STAGE_URL }}" >> $GITHUB_ENV
+          else
+            echo "AEM_URL=${{ secrets.AEM_PROD_URL }}" >> $GITHUB_ENV
+          fi
+
+      - name: Ping AEM
+        run: |
+          echo "Pinging $AEM_URL"
 
           STATUS=$(curl \
             --silent \
             --output /dev/null \
             --write-out "%{http_code}" \
-            "${{ secrets.AEM_URL }}")
+            "$AEM_URL")
 
-          echo "HTTP Status: $STATUS"
+          echo "${{ matrix.env }} Status: $STATUS"
 
-          if [ "$STATUS" -eq 200 ]; then
-            echo "Sandbox is reachable"
-          else
-            echo "Sandbox returned $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "Failed for $AEM_URL"
             exit 1
           fi
