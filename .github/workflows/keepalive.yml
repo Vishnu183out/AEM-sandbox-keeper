@@ -27,14 +27,16 @@ jobs:
             echo "AEM_URL=${{ secrets.AEM_PROD_URL }}" >> $GITHUB_ENV
           fi
 
-      - name: Ping AEM
+      - name: Ping AEM Servlet (Authenticated)
         run: |
           echo "Pinging $AEM_URL"
 
           STATUS=$(curl \
             --silent \
+            --location \
             --output /dev/null \
             --write-out "%{http_code}" \
+            --user "${{ secrets.AEM_USERNAME }}:${{ secrets.AEM_PASSWORD }}" \
             "$AEM_URL")
 
           echo "${{ matrix.env }} Status: $STATUS"
